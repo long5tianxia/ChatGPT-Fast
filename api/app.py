@@ -2,14 +2,37 @@ import orjson
 import aiohttp
 from time import time
 from hashlib import md5
-from fastapi import APIRouter, BackgroundTasks, Query
-from app.api.v1.chat.schemas import sChat_Body
+from typing import Optional
+from pydantic import BaseModel
+from fastapi import FastAPI, BackgroundTasks, Query
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 
-api = APIRouter()
+app = FastAPI(
+    docs_url=None,
+    openapi_url=None
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+# gzip
+app.add_middleware(GZipMiddleware)
 chat_resp = {}
 
 
-@api.post('/completions', summary='对话')
+class sChat_Body(BaseModel):
+    model: Optional[str]
+    messages: Optional[list]
+    sk: Optional[str]
+    max_tokens: Optional[int] = -1  # 完成时要生成的最大 token 数
+    temperature: Optional[float] = -1  # 使用哪个采样温度，在 0和2之间
+
+
+@app.post('/chat.completions', summary='对话')
 async def Chat_Completions(body: sChat_Body, background_tasks: BackgroundTasks):
     ldata = {
         'model': body.model,
@@ -68,7 +91,7 @@ async def OpenAI_Completions(sk: str, ldata: dict, taskid: str):
         chat_resp[taskid]['code'] = 500
 
 
-@api.get('/result.get', summary='获取对话结果')
+@app.get('/chat.get', summary='获取对话结果')
 async def Chat_Result(taskid: str = Query(...)):
     global chat_resp
     if taskid not in chat_resp:
