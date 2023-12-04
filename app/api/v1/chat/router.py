@@ -34,7 +34,7 @@ async def OpenAI_Completions(sk: str, ldata: dict, taskid: str):
         'Authorization': f'Bearer {sk}',
     }
     global chat_resp
-    lproxy = 'http://127.0.0.1:7890'
+    lproxy = None
     chat_resp[taskid] = {}
     chat_resp[taskid]['code'] = 201
     chat_resp[taskid]['content'] = ''
